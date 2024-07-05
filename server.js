@@ -15,7 +15,9 @@ app.use(cors());
 app.use(bodyParser.json());
 
 // Serve static files from the 'uploads' directory
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+// app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+const uploadDir = '/var/data/uploads';
+app.use('/uploads', express.static(uploadDir));
 
 mongoose
   .connect(process.env.MONGODB_URI)
