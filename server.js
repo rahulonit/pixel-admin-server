@@ -66,14 +66,14 @@ app.post('/api/login', async (req, res) => {
   }
 });
 
-  const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-      cb(null, 'uploads/'); // Directory where files will be stored
-    },
-    filename: function (req, file, cb) {
-      cb(null, Date.now() + path.extname(file.originalname)); // File name in the format: timestamp + original file extension
-    }
-  });
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, uploadDir); // Directory where files will be stored
+  },
+  filename: function (req, file, cb) {
+    cb(null, Date.now() + path.extname(file.originalname)); // File name in the format: timestamp + original file extension
+  }
+});
 
   const upload = multer({ storage: storage });
 
