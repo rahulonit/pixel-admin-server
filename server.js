@@ -16,6 +16,7 @@ app.use(bodyParser.json());
 
 // Serve static files from the 'uploads' directory
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
 // const uploadDir = '/var/data/uploads';
 // app.use('/uploads', express.static(uploadDir));
 
@@ -50,7 +51,7 @@ app.post('/api/login', async (req, res) => {
     }
 
     // Validate password
-    const isMatch = (password == admin.password);
+    const isMatch = password == admin.password;
 
     if (!isMatch) {
       return res.status(400).json({ message: 'Invalid credentials' });
@@ -66,16 +67,16 @@ app.post('/api/login', async (req, res) => {
   }
 });
 
-  const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-      cb(null, 'uploads/'); // Directory where files will be stored
-    },
-    filename: function (req, file, cb) {
-      cb(null, Date.now() + path.extname(file.originalname)); // File name in the format: timestamp + original file extension
-    }
-  });
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, 'uploads/'); // Directory where files will be stored
+  },
+  filename: function (req, file, cb) {
+    cb(null, Date.now() + path.extname(file.originalname)); // File name in the format: timestamp + original file extension
+  }
+});
 
-  const upload = multer({ storage: storage });
+const upload = multer({ storage: storage });
 
 // Job Application Schema
 const jobApplicationSchema = new mongoose.Schema({
@@ -97,17 +98,13 @@ const careerSchema = new mongoose.Schema({
   positions: { type: String, required: true },
   location: { type: String, required: true },
   category: { type: String, required: true },
+  content: { type: String },
   skills: { type: [String], required: true },
   responsibilities: { type: [String], required: true },
   description: { type: String, required: true },
-  about: { type: String, required: true },
-  keyResponsibilities: { type: String, required: true },
-  keyResposibilty: { type: [String], required: true },
+
   niceToHave: { type: [String], required: true },
-  salary: { type: String, required: true },
-  exchangeProgram: { type: String, required: true },
-  greatWorkPlace: { type: String, required: true },
-  service: { type: String, required: true }
+ 
 });
 
 const Career = mongoose.model('Career', careerSchema);
@@ -124,11 +121,17 @@ const Project = mongoose.model('Project', projectSchema);
 
 // Job Applications Endpoints
 app.post('/api/jobapplications', upload.single('resume'), async (req, res) => {
-  const { name, email, contact, position, message, date} = req.body;
+  const { name, email, contact, position, message, date } = req.body;
   const resume = req.file.path;
   try {
     const jobApplication = new JobApplication({
-      name, email, contact, position,resume, message, date
+      name,
+      email,
+      contact,
+      position,
+      resume,
+      message,
+      date
     });
     await jobApplication.save();
     res.status(201).json(jobApplication);
@@ -176,7 +179,7 @@ app.delete('/api/jobapplications/:id', async (req, res) => {
 
 // Career Endpoints
 app.post('/api/careers', upload.single('image'), async (req, res) => {
-  const { title, positions, location, category, skills, responsibilities, description, about, keyResponsibilities, keyResposibilty, niceToHave, salary, exchangeProgram, greatWorkPlace, service } = req.body;
+  const { title, positions, location, category, content, skills, responsibilities, description, niceToHave } = req.body;
   const image = req.file.path;
   try {
     const career = new Career({
@@ -184,17 +187,13 @@ app.post('/api/careers', upload.single('image'), async (req, res) => {
       positions,
       location,
       category,
+      content,
       skills: JSON.parse(skills),
       responsibilities: JSON.parse(responsibilities),
       description,
-      about,
-      keyResponsibilities,
-      keyResposibilty: JSON.parse(keyResposibilty),
+
       niceToHave: JSON.parse(niceToHave),
-      salary,
-      exchangeProgram,
-      greatWorkPlace,
-      service,
+
       image
     });
     await career.save();
@@ -217,7 +216,9 @@ app.get('/api/careers', async (req, res) => {
 
 app.get('/api/careers/:id', async (req, res) => {
   try {
+    console.log(req.params.id);
     const career = await Career.findById(req.params.id);
+    console.log(career);
     if (!career) {
       return res.status(404).json({ message: 'Career not found' });
     }
@@ -241,7 +242,7 @@ app.put('/api/careers/:id', upload.single('image'), async (req, res) => {
     // Convert arrays from JSON strings to arrays
     if (updateData.skills) updateData.skills = JSON.parse(updateData.skills);
     if (updateData.responsibilities) updateData.responsibilities = JSON.parse(updateData.responsibilities);
-    if (updateData.keyResponsibility) updateData.keyResponsibility = JSON.parse(updateData.keyResponsibility);
+
     if (updateData.niceToHave) updateData.niceToHave = JSON.parse(updateData.niceToHave);
 
     const updatedCareer = await Career.findByIdAndUpdate(id, updateData, { new: true });
@@ -268,8 +269,6 @@ app.delete('/api/careers/:id', async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 });
-
-
 
 // Project Endpoints
 app.post('/api/projects', upload.single('image'), async (req, res) => {
@@ -348,12 +347,6 @@ app.delete('/api/projects/:id', async (req, res) => {
   }
 });
 
-
-
-
-
-
-
 // Define the schema and model
 const teamSchema = new mongoose.Schema({
   image: String,
@@ -366,8 +359,6 @@ const teamSchema = new mongoose.Schema({
 });
 
 const Team = mongoose.model('Team', teamSchema);
-
-
 
 // Create a new team member
 app.post('/api/teams', upload.single('image'), async (req, res) => {
@@ -412,11 +403,7 @@ app.put('/api/teams/:id', upload.single('image'), async (req, res) => {
   const image = req.file ? req.file.path : '';
 
   try {
-    const updatedTeamMember = await Team.findByIdAndUpdate(
-      req.params.id,
-      { image, name, designation, priority, twitter, insta, linkedin },
-      { new: true }
-    );
+    const updatedTeamMember = await Team.findByIdAndUpdate(req.params.id, { image, name, designation, priority, twitter, insta, linkedin }, { new: true });
     if (!updatedTeamMember) {
       return res.status(404).json({ message: 'Team member not found' });
     }
